@@ -311,7 +311,8 @@ function mcl_beds.kick_player(player)
 end
 
 function mcl_beds.skip_night()
-	core.set_timeofday(0.25) -- tod = 6000
+	--core.set_timeofday(0.25) -- tod = 6000
+	better_day_night_cycle.set_timeofday(0.23) 
 end
 
 function mcl_beds.get_bed_top (pos)

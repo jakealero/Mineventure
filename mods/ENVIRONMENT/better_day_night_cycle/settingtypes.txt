@@ -1,0 +1,13 @@
+# Better Day-Night Cycle settings
+
+better_day_night_cycle.enabled (Enable custom day-night cycle) bool true
+
+# Durations are measured in real-world seconds.
+better_day_night_cycle.day_duration (Day duration in seconds) float 900 1 86400
+
+better_day_night_cycle.night_duration (Night duration in seconds) float 600 1 86400
+
+# Normalized Luanti time-of-day positions (0.0 to 1.0).
+better_day_night_cycle.day_start (Day start time) float 0.23 0 0.99
+
+better_day_night_cycle.night_start (Night start time) float 0.73 0.01 1

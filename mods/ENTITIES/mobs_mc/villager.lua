@@ -15,6 +15,125 @@ local scale_chance = mcl_mobs.scale_chance
 mobs_mc.jobsites = {}
 
 ------------------------------------------------------------------------
+--- New Villager System
+------------------------------------------------------------------------
+mc_villager_list = rawget(_G, "mc_villager_list") or 
+{
+	["armorer"] = {},
+}
+
+DOD_custom_functions =rawget(_G, "DOD_custom_functions") or 
+{
+	--["arrmorer"] = function(objref)
+}
+
+
+local function DOD_register_villager(objref)
+	if not objref or not objref:is_valid() then
+		return
+	end
+
+	local entity = objref:get_luaentity()
+    if not entity or not entity._profession then
+        return
+    end
+
+	local list = mc_villager_list[entity._profession]
+    if not list then
+        list = {}
+        mc_villager_list[entity._profession] = list
+    end
+
+	for _, existing in ipairs(list) do
+        if existing == objref then
+            return
+        end
+    end
+
+    table.insert(list, objref)
+end
+
+local function DOD_is_valid_villager(objref)
+    return objref and objref:is_valid()
+end
+
+local function DOD_has_correct_profession(objref, profession)
+    local entity = objref:get_luaentity()
+    return entity and entity._profession == profession
+end
+
+local function DOD_check_for_stale_villager()
+    for profession, list in pairs(mc_villager_list) do
+        for i = #list, 1, -1 do
+            local objref = list[i]
+
+            if not DOD_is_valid_villager(objref)
+            or not DOD_has_correct_profession(objref, profession) then
+                table.remove(list, i)
+				DOD_register_villager(objref)
+            end
+        end
+    end
+end
+
+local function DOD_run_custom_functions(dtime)
+    for profession, list in pairs(mc_villager_list) do
+        local callback = DOD_custom_functions[profession]
+
+        if callback then
+            for _, objref in ipairs(list) do
+                if DOD_is_valid_villager(objref) then
+                    callback(objref, dtime)
+                end
+            end
+        end
+    end
+end
+
+-- running custom logic for villagers, like updating trades or other profession-specific behavior
+
+local function DOD_run_custom_functions()
+    for profession, list in pairs(mc_villager_list) do
+        local custom_function = DOD_custom_functions[profession]
+
+        if type(custom_function) == "function" then
+            for _, objref in ipairs(list) do
+                if DOD_is_valid_villager(objref) then
+                    custom_function(objref)
+                end
+            end
+        end
+    end
+end
+
+local clean_up_timestep = 0
+core.register_globalstep(function(dtime)
+	
+	clean_up_timestep = clean_up_timestep + dtime
+	if clean_up_timestep < 5 then
+		return
+	end
+	clean_up_timestep = clean_up_timestep - 5
+
+	DOD_check_for_stale_villager()
+end)
+
+local custom_update_timestep = 0
+
+core.register_globalstep(function(dtime)
+	
+	custom_update_timestep = custom_update_timestep + dtime
+	if custom_update_timestep < 0.25 then
+		return
+	end
+	custom_update_timestep = custom_update_timestep - 0.25
+
+	DOD_run_custom_functions(dtime)
+end)
+
+
+
+------------------------------------------------------------------------
 -- Abstract Villager.
 ------------------------------------------------------------------------
 
@@ -6360,6 +6479,8 @@ function villager:init_ai ()
 	self._saluting_hero = nil
 	self._stagger_schedules_by = pr:next (0, 60)
 	self:schedule ()
+
+	DOD_register_villager(self.object)
 end
 
 ------------------------------------------------------------------------
@@ -6783,3 +6904,8 @@ mcl_mobs.register_mob ("mobs_mc:villager", villager)
 ------------------------------------------------------------------------
 
 mcl_mobs.register_egg ("mobs_mc:villager", S("Villager"), "#563d33", "#bc8b72", 0)
+
+
+
+
+
