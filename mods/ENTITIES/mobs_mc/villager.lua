@@ -27,6 +27,13 @@ DOD_custom_functions =rawget(_G, "DOD_custom_functions") or
 	--["arrmorer"] = function(objref)
 }
 
+function DOD_register_custom_function(profession, callback)
+    assert(type(profession) == "string", "Profession must be a string")
+    assert(type(callback) == "function", "Callback must be a function")
+
+    DOD_custom_functions[profession] = callback
+end
+
 
 local function DOD_register_villager(objref)
 	if not objref or not objref:is_valid() then
@@ -76,30 +83,18 @@ local function DOD_check_for_stale_villager()
     end
 end
 
-local function DOD_run_custom_functions(dtime)
-    for profession, list in pairs(mc_villager_list) do
-        local callback = DOD_custom_functions[profession]
 
-        if callback then
-            for _, objref in ipairs(list) do
-                if DOD_is_valid_villager(objref) then
-                    callback(objref, dtime)
-                end
-            end
-        end
-    end
-end
 
 -- running custom logic for villagers, like updating trades or other profession-specific behavior
 
-local function DOD_run_custom_functions()
+local function DOD_run_custom_functions(dtime)
     for profession, list in pairs(mc_villager_list) do
         local custom_function = DOD_custom_functions[profession]
 
         if type(custom_function) == "function" then
             for _, objref in ipairs(list) do
                 if DOD_is_valid_villager(objref) then
-                    custom_function(objref)
+                    custom_function(objref, dtime)
                 end
             end
         end
